@@ -1,396 +1,156 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BluePort AI — Waste Intelligence for Ports</title>
-<meta name="description" content="AI-powered waste identification and classification for port environments. Computer vision meets sustainability compliance.">
-<meta property="og:title" content="BluePort AI — Waste Intelligence for Ports">
-<meta property="og:description" content="AI-powered waste identification and classification for port environments. Computer vision meets sustainability compliance.">
-<meta property="og:type" content="website">
-<meta property="og:url" content="https://blueportai.manus.space/">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BluePort AI · Waste classification for ports</title>
+<meta name="description" content="Computer vision that sorts waste photos into six recycling streams for port operations. CLIP encoder plus a linear probe, 94.6% cross-validated accuracy on 11,451 images. Try it in the browser.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root{
-    --navy-900:#0b1a2e;
-    --navy-800:#102743;
-    --navy-700:#16324f;
-    --blue:#1673b8;
-    --blue-dark:#0e5c96;
-    --telegram:#229ED9;
-    --amber:#f2a63b;
-    --amber-2:#f5b551;
-    --text-dark:#132437;
-    --text-body:#455567;
-    --text-muted:#7a8896;
-    --light:#f5f8fb;
-    --light-2:#eef4f9;
-    --card-border:#e4ecf3;
-    --green:#3aab6b;
-    --cyan-soft:#dcecf6;
+    --navy:#0b1f3a; --navy-2:#132c50; --teal:#12a594; --teal-2:#0d8577; --sand:#f5f8fb; --ink:#152033; --muted:#5b6b82;
+    --line:#dfe6ee; --card:#ffffff; --good:#1b8a4b; --warn:#b7791f;
   }
-  *{margin:0;padding:0;box-sizing:border-box}
-  html{scroll-behavior:smooth}
-  body{font-family:'Inter',sans-serif;color:var(--text-body);background:#fff;line-height:1.6;-webkit-font-smoothing:antialiased}
-  h1,h2,h3,h4{font-family:'Poppins',sans-serif;color:var(--text-dark);line-height:1.15}
-  a{text-decoration:none;color:inherit}
-  img{max-width:100%;display:block}
-  .wrap{max-width:1180px;margin:0 auto;padding:0 24px}
-  .accent{color:var(--amber)}
-  .btn{display:inline-flex;align-items:center;gap:8px;padding:14px 26px;border-radius:40px;font-weight:600;font-family:'Poppins',sans-serif;font-size:15px;cursor:pointer;border:none;transition:transform .15s ease,box-shadow .15s ease}
-  .btn:hover{transform:translateY(-2px)}
-  .btn-tg{background:var(--blue);color:#fff;box-shadow:0 8px 24px rgba(22,115,184,.35)}
-  .btn-ghost{background:transparent;color:#fff;border:1.5px solid rgba(255,255,255,.4)}
-  .btn-ghost.dark{color:var(--text-dark);border-color:var(--card-border)}
-  .eyebrow{font-family:'Poppins',sans-serif;font-weight:600;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--blue)}
-
-  /* NAV */
-  header.nav{position:fixed;top:0;left:0;right:0;z-index:50;transition:background .3s ease,box-shadow .3s ease}
-  header.nav.solid{background:rgba(11,26,46,.92);backdrop-filter:blur(10px);box-shadow:0 2px 20px rgba(0,0,0,.25)}
-  .nav-inner{display:flex;align-items:center;justify-content:space-between;height:74px}
-  .logo{display:flex;align-items:center;gap:10px;font-family:'Poppins',sans-serif;font-weight:700;font-size:20px;color:#fff}
-  .logo .mark{width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,var(--blue),var(--blue-dark));display:grid;place-items:center;font-size:18px}
-  .logo .ai{color:var(--amber)}
-  .nav-links{display:flex;align-items:center;gap:30px}
-  .nav-links a{color:rgba(255,255,255,.82);font-size:15px;font-weight:500}
-  .nav-links a:hover{color:#fff}
-  .nav-cta{display:flex;align-items:center;gap:16px}
-  .burger{display:none;background:none;border:none;color:#fff;font-size:26px;cursor:pointer}
-
-  /* HERO */
-  .hero{position:relative;min-height:100vh;display:flex;align-items:center;padding:120px 0 60px;overflow:hidden}
-  .hero-bg{position:absolute;inset:0;background:url('https://d2xsxph8kpxj0f.cloudfront.net/310519663332536845/QB66HgxEvbi3AQhFdsiHMm/blueport-hero-bg-bGNNuCHLNN27PJPPL6GQ3h.webp') center/cover no-repeat;z-index:0}
-  .hero-bg::after{content:"";position:absolute;inset:0;background:linear-gradient(105deg,rgba(11,26,46,.96) 0%,rgba(11,26,46,.86) 40%,rgba(11,26,46,.55) 70%,rgba(11,26,46,.35) 100%)}
-  .hero .wrap{position:relative;z-index:2;display:grid;grid-template-columns:1.05fr .95fr;gap:48px;align-items:center;width:100%}
-  .badge{display:inline-flex;align-items:center;gap:9px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);padding:9px 18px;border-radius:40px;color:rgba(255,255,255,.9);font-size:13.5px;font-weight:500;margin-bottom:26px}
-  .badge .dot{width:8px;height:8px;border-radius:50%;background:var(--amber);box-shadow:0 0 10px var(--amber)}
-  .hero h1{font-size:66px;font-weight:800;color:#fff;letter-spacing:-1.5px;margin-bottom:22px}
-  .hero p.lead{color:rgba(255,255,255,.82);font-size:18px;max-width:520px;margin-bottom:28px}
-  .pills{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:32px}
-  .pill{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.16);padding:9px 16px;border-radius:12px;color:rgba(255,255,255,.9);font-size:14px}
-  .hero-actions{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:44px}
-  .stats{display:flex;gap:44px}
-  .stat .num{font-family:'Poppins',sans-serif;font-weight:800;font-size:34px;color:var(--amber);line-height:1}
-  .stat .lbl{color:rgba(255,255,255,.7);font-size:13.5px;margin-top:6px}
-
-  /* HERO CARD */
-  .hero-card{background:#fff;border-radius:26px;padding:18px;box-shadow:0 30px 80px rgba(0,0,0,.4);position:relative}
-  .hero-card img{border-radius:16px;width:100%}
-  .tag-float{position:absolute;background:#fff;border-radius:12px;padding:9px 15px;box-shadow:0 12px 30px rgba(0,0,0,.18);font-weight:600;font-size:14px;color:var(--text-dark);display:flex;align-items:center;gap:8px}
-  .tag-float.top{top:26px;right:-14px}
-  .tag-float.bot{bottom:34px;left:-14px}
-  .tag-float .bdot{width:9px;height:9px;border-radius:50%}
-  .tag-float .bdot.blue{background:var(--blue)}
-  .tag-float .bdot.green{background:var(--green)}
-  .card-caption{text-align:center;font-size:12px;color:var(--text-muted);margin-top:10px;font-style:italic}
-
-  /* SECTIONS */
-  section{padding:96px 0}
-  .section-light{background:var(--light)}
-  .section-white{background:#fff}
-  .sec-head{max-width:720px;margin-bottom:54px}
-  .sec-head.center{margin-left:auto;margin-right:auto;text-align:center}
-  .sec-head h2{font-size:42px;font-weight:800;letter-spacing:-1px;margin:14px 0 18px}
-  .sec-head p{font-size:17px;color:var(--text-body)}
-
-  /* ABOUT */
-  .about-grid{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:start}
-  .tech-tags{display:flex;flex-wrap:wrap;gap:10px;margin:26px 0 8px}
-  .tech-tag{background:var(--cyan-soft);color:var(--blue-dark);padding:7px 15px;border-radius:30px;font-size:13.5px;font-weight:600}
-  .feat-cards{display:grid;grid-template-columns:1fr 1fr;gap:20px}
-  .feat{background:#fff;border:1px solid var(--card-border);border-radius:18px;padding:26px;transition:box-shadow .2s ease,transform .2s ease}
-  .feat:hover{box-shadow:0 16px 40px rgba(19,36,55,.08);transform:translateY(-3px)}
-  .feat .ic{width:46px;height:46px;border-radius:12px;background:var(--light-2);display:grid;place-items:center;font-size:20px;margin-bottom:16px}
-  .feat h4{font-size:18px;margin-bottom:8px}
-  .feat p{font-size:14.5px}
-  .about-visual{position:relative}
-  .about-visual img{border-radius:20px;box-shadow:0 24px 60px rgba(19,36,55,.16)}
-  .status-float{position:absolute;bottom:20px;left:20px;background:var(--navy-800);color:#fff;border-radius:14px;padding:14px 20px}
-  .status-float .k{font-size:11px;letter-spacing:.12em;color:rgba(255,255,255,.6);text-transform:uppercase}
-  .status-float .v{display:flex;align-items:center;gap:8px;font-weight:600;font-size:15px;margin-top:4px}
-  .status-float .v .dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green)}
-
-  /* STEPS */
-  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:26px}
-  .step{background:#fff;border:1px solid var(--card-border);border-radius:20px;padding:32px 28px;position:relative}
-  .step .n{font-family:'Poppins',sans-serif;font-weight:800;font-size:13px;letter-spacing:.1em;color:var(--amber)}
-  .step h4{font-size:20px;margin:14px 0 12px}
-  .step p{font-size:14.5px;margin-bottom:14px}
-  .step .note{font-size:13px;color:var(--text-muted);border-top:1px solid var(--card-border);padding-top:12px}
-  .cta-band{margin-top:48px;background:linear-gradient(135deg,var(--navy-800),var(--navy-700));border-radius:24px;padding:44px;text-align:center;color:#fff}
-  .cta-band h3{color:#fff;font-size:26px;margin-bottom:8px}
-  .cta-band p{color:rgba(255,255,255,.75);margin-bottom:22px}
-  .bothandle{display:inline-block;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);padding:12px 24px;border-radius:40px;font-family:'Poppins',sans-serif;font-weight:600;color:var(--amber-2);margin-bottom:26px}
-  .cmds{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;max-width:760px;margin:0 auto}
-  .cmd{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:18px}
-  .cmd .c{font-family:'Poppins',sans-serif;font-weight:700;color:#fff;font-size:15px}
-  .cmd .d{font-size:12.5px;color:rgba(255,255,255,.65);margin-top:6px}
-
-  /* WASTE TYPES */
-  .waste-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
-  .waste{background:#fff;border:1px solid var(--card-border);border-radius:20px;padding:28px;transition:box-shadow .2s ease,transform .2s ease}
-  .waste:hover{box-shadow:0 18px 44px rgba(19,36,55,.1);transform:translateY(-3px)}
-  .waste-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
-  .waste .emoji{font-size:30px}
-  .tagchip{font-size:11.5px;font-weight:700;padding:5px 12px;border-radius:20px;text-transform:uppercase;letter-spacing:.04em}
-  .tagchip.rec{background:#e3f5ec;color:var(--green)}
-  .tagchip.spec{background:#fdefe0;color:#d9832a}
-  .waste h4{font-size:20px;margin-bottom:10px}
-  .waste p{font-size:14px;margin-bottom:16px}
-  .tokens{display:flex;flex-wrap:wrap;gap:8px}
-  .token{background:var(--light-2);color:var(--text-body);font-size:12.5px;padding:5px 11px;border-radius:8px}
-  .train-note{display:inline-flex;align-items:center;gap:9px;background:#fff;border:1px solid var(--card-border);padding:10px 20px;border-radius:40px;font-size:14px;color:var(--text-body);margin-top:12px}
-  .train-note .dot{width:8px;height:8px;border-radius:50%;background:var(--amber)}
-
-  /* DATASET */
-  .ds-grid{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center}
-  .ds-stats{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:30px}
-  .ds-stat{background:#fff;border:1px solid var(--card-border);border-radius:16px;padding:22px}
-  .ds-stat .n{font-family:'Poppins',sans-serif;font-weight:800;font-size:26px;color:var(--blue)}
-  .ds-stat .t{font-weight:600;color:var(--text-dark);margin-top:4px;font-size:15px}
-  .ds-stat .s{font-size:13px;color:var(--text-muted)}
-  .ds-tree{background:var(--navy-800);border-radius:20px;padding:30px;font-family:'Poppins',monospace}
-  .ds-tree .th{font-size:12px;letter-spacing:.12em;color:rgba(255,255,255,.55);text-transform:uppercase;margin-bottom:18px}
-  .ds-tree pre{font-family:ui-monospace,'SF Mono',Menlo,monospace;color:#cfe3f2;font-size:15px;line-height:2}
-  .ds-tree .root{color:var(--amber-2)}
-  .ds-tree .fold{color:#8fc4ea}
-
-  /* FOOTER */
-  footer{background:var(--navy-900);color:rgba(255,255,255,.7);padding:70px 0 34px}
-  .foot-grid{display:grid;grid-template-columns:2fr 1fr 1fr;gap:44px;margin-bottom:44px}
-  .foot-about p{font-size:14.5px;max-width:340px;margin-top:16px}
-  .foot h5{font-family:'Poppins',sans-serif;color:#fff;font-size:13px;letter-spacing:.12em;text-transform:uppercase;margin-bottom:18px}
-  .foot ul{list-style:none;display:flex;flex-direction:column;gap:11px}
-  .foot ul a{font-size:14.5px;color:rgba(255,255,255,.7)}
-  .foot ul a:hover{color:#fff}
-  .foot-bar{border-top:1px solid rgba(255,255,255,.1);padding-top:24px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;font-size:13.5px}
-  .foot-bar .live{display:inline-flex;align-items:center;gap:8px}
-  .foot-bar .live .dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green)}
-
-  @media(max-width:960px){
-    .hero .wrap,.about-grid,.ds-grid{grid-template-columns:1fr}
-    .hero h1{font-size:48px}
-    .steps,.waste-grid,.cmds,.foot-grid{grid-template-columns:1fr}
-    .feat-cards{grid-template-columns:1fr}
-    .nav-links{display:none}
-    .burger{display:block}
-    .nav-links.open{display:flex;position:absolute;top:74px;left:0;right:0;flex-direction:column;background:var(--navy-800);padding:20px 24px;gap:16px}
-    .hero-card{margin-top:20px}
-    .stats{gap:26px}
-  }
-  @media(max-width:600px){.hero h1{font-size:38px}.sec-head h2{font-size:32px}.waste-grid{grid-template-columns:1fr}.cmds{grid-template-columns:1fr 1fr}}
+  *{box-sizing:border-box} html{scroll-behavior:smooth}
+  body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:var(--ink);background:var(--sand);line-height:1.55}
+  a{color:var(--teal-2)} img{max-width:100%}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 20px}
+  header{background:var(--navy);color:#fff;position:sticky;top:0;z-index:5}
+  nav{display:flex;align-items:center;justify-content:space-between;height:60px}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:-.2px;color:#fff;text-decoration:none}
+  .brand svg{width:30px;height:30px}
+  nav ul{display:flex;gap:22px;list-style:none;margin:0;padding:0}
+  nav ul a{color:#cfe0f5;text-decoration:none;font-size:14px;font-weight:500} nav ul a:hover{color:#fff}
+  @media(max-width:720px){nav ul{display:none}}
+  .hero{background:linear-gradient(160deg,var(--navy) 0%,var(--navy-2) 60%,#0f3c5c 100%);color:#fff;padding:64px 0 56px}
+  .hero .eyebrow{color:#7fd6c9;font-size:12px;letter-spacing:1.6px;text-transform:uppercase;font-weight:700}
+  .hero h1{font-size:clamp(30px,5vw,50px);line-height:1.08;letter-spacing:-1px;margin:12px 0 16px;font-weight:800}
+  .hero p{font-size:18px;color:#d5e3f3;max-width:680px;margin:0 0 26px}
+  .btn{display:inline-block;padding:12px 20px;border-radius:10px;font-weight:700;text-decoration:none;font-size:15px}
+  .btn-primary{background:var(--teal);color:#06231f} .btn-primary:hover{background:#17c1ad}
+  .btn-ghost{border:1.5px solid #6f8db3;color:#fff;margin-left:10px} .btn-ghost:hover{border-color:#fff}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:38px}
+  @media(max-width:720px){.stats{grid-template-columns:repeat(2,1fr)}}
+  .stat{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:14px 16px}
+  .stat b{display:block;font-size:26px;letter-spacing:-.5px} .stat span{font-size:12px;color:#b9cbe1;text-transform:uppercase;letter-spacing:.6px}
+  section{padding:56px 0} section h2{font-size:30px;letter-spacing:-.6px;margin:0 0 8px} .lead{color:var(--muted);font-size:17px;max-width:720px;margin:0 0 26px}
+  .demo-frame{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 10px 30px rgba(11,31,58,.08)}
+  .demo-frame iframe{width:100%;height:820px;border:0;display:block}
+  .note{font-size:13px;color:var(--muted);margin-top:10px}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px} @media(max-width:820px){.grid{grid-template-columns:repeat(2,1fr)}} @media(max-width:520px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}
+  .card h3{margin:6px 0 6px;font-size:17px} .card p{margin:0;color:var(--muted);font-size:14px}
+  .tag{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;padding:3px 8px;border-radius:999px;background:#e3f5ec;color:var(--good)}
+  .tag.warn{background:#fdefe0;color:var(--warn)}
+  table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;font-size:14px}
+  th,td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--line)} th{background:#eef4f9;font-weight:700;color:var(--navy)} tr:last-child td{border-bottom:0}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+  .two{display:grid;grid-template-columns:1.1fr .9fr;gap:24px;align-items:start} @media(max-width:820px){.two{grid-template-columns:1fr}}
+  .flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:14px 0 20px}
+  .flow span{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:13px;font-weight:600} .flow i{color:var(--muted)}
+  footer{background:var(--navy);color:#b9cbe1;padding:34px 0;font-size:14px} footer a{color:#7fd6c9}
+  .alt{background:#fff}
 </style>
 </head>
 <body>
+<header><div class="wrap"><nav>
+  <a class="brand" href="#">
+    <svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="30" fill="#12a594"/><path d="M32 12v34M20 24l12-12 12 12M18 40c4 6 8 8 14 8s10-2 14-8" stroke="#06231f" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    BluePort AI
+  </a>
+  <ul><li><a href="#try">Try it</a></li><li><a href="#results">Results</a></li><li><a href="#how">How it works</a></li><li><a href="#streams">Waste streams</a></li><li><a href="#code">Code</a></li></ul>
+</nav></div></header>
 
-<header class="nav" id="nav">
-  <div class="wrap nav-inner">
-    <a href="#top" class="logo"><span class="mark">⚓</span>Blue<span style="color:var(--amber)">Port</span> <span class="ai">AI</span></a>
-    <nav class="nav-links" id="navlinks">
-      <a href="#about">About</a>
-      <a href="#how">How It Works</a>
-      <a href="#waste">Waste Types</a>
-      <a href="#dataset">Dataset</a>
-      <a href="#footer">Contact</a>
-    </nav>
-    <div class="nav-cta">
-      <a href="https://t.me/blueport_ia_wastebot" target="_blank" rel="noopener" class="btn btn-tg">✈ Try on Telegram</a>
-      <button class="burger" id="burger" aria-label="Menu">☰</button>
+<div class="hero"><div class="wrap">
+  <div class="eyebrow">Computer vision · Port sustainability · Open source</div>
+  <h1>Point a camera at waste.<br>Get the right recycling stream.</h1>
+  <p>BluePort AI classifies photos of waste into six streams used in port environmental management. A frozen CLIP encoder and a tiny trained head do the work, so it runs on any laptop and is easy to audit.</p>
+  <a class="btn btn-primary" href="#try">Try it in the browser</a>
+  <a class="btn btn-ghost" href="https://github.com/darlianecunha/blueport-ai2">View the code</a>
+  <div class="stats">
+    <div class="stat"><b>94.6%</b><span>cross-validated accuracy</span></div>
+    <div class="stat"><b>11,451</b><span>labelled training images</span></div>
+    <div class="stat"><b>6</b><span>waste streams</span></div>
+    <div class="stat"><b>3,078</b><span>trained parameters</span></div>
+  </div>
+</div></div>
+
+<section id="try"><div class="wrap">
+  <h2>Try it</h2>
+  <p class="lead">Drop a photo or pick one of the examples. The demo runs on a free Hugging Face Space: the first request after a pause can take about 30 seconds while it wakes up.</p>
+  <div class="demo-frame">
+    <iframe src="https://HF_USER-blueport-ai.hf.space" title="BluePort AI demo" allow="camera" loading="lazy"></iframe>
+  </div>
+  <p class="note">Not loading? Open the demo directly at <a href="https://huggingface.co/spaces/HF_USER/blueport-ai">huggingface.co/spaces/HF_USER/blueport-ai</a>.</p>
+</div></section>
+
+<section id="results" class="alt"><div class="wrap">
+  <h2>Results</h2>
+  <p class="lead">Evaluated with 5-fold stratified cross-validation on all 11,451 images: every image is predicted by a model that never saw it during training.</p>
+  <div class="two">
+    <table>
+      <thead><tr><th>Stream</th><th class="num">Images</th><th class="num">Precision</th><th class="num">Recall</th><th class="num">F1</th></tr></thead>
+      <tbody>
+        <tr><td>E-waste</td><td class="num">2,543</td><td class="num">0.984</td><td class="num">0.982</td><td class="num">0.983</td></tr>
+        <tr><td>Metal</td><td class="num">2,247</td><td class="num">0.953</td><td class="num">0.949</td><td class="num">0.951</td></tr>
+        <tr><td>Paper / cardboard</td><td class="num">2,237</td><td class="num">0.938</td><td class="num">0.954</td><td class="num">0.946</td></tr>
+        <tr><td>Plastic</td><td class="num">2,217</td><td class="num">0.918</td><td class="num">0.908</td><td class="num">0.913</td></tr>
+        <tr><td>Glass</td><td class="num">2,035</td><td class="num">0.944</td><td class="num">0.931</td><td class="num">0.937</td></tr>
+        <tr><td>Organic</td><td class="num">172</td><td class="num">0.815</td><td class="num">0.948</td><td class="num">0.876</td></tr>
+        <tr><td><b>All</b></td><td class="num"><b>11,451</b></td><td class="num" colspan="3"><b>accuracy 0.946</b> · balanced accuracy 0.945 · macro F1 0.935</td></tr>
+      </tbody>
+    </table>
+    <div>
+      <img src="assets/confusion_matrix_cv.png" alt="Row-normalised confusion matrix of the six classes" style="border-radius:12px;border:1px solid var(--line)">
+      <p class="note">Most confusion is between plastic, paper and glass containers of similar shape. Organic is the smallest class; class weighting lifts its recall to 95%.</p>
     </div>
   </div>
-</header>
+</div></section>
 
-<!-- HERO -->
-<section class="hero" id="top">
-  <div class="hero-bg"></div>
-  <div class="wrap">
-    <div class="hero-text">
-      <span class="badge"><span class="dot"></span> AI-Powered · Port Sustainability · Live on Telegram</span>
-      <h1>Smart Waste<br><span class="accent">Intelligence</span><br>for Ports</h1>
-      <p class="lead">BluePort AI uses computer vision to identify and classify waste in port environments, supporting operational sustainability and compliance reporting in real time.</p>
-      <div class="pills">
-        <span class="pill">👁 Visual Recognition</span>
-        <span class="pill">✈ Telegram Bot</span>
-        <span class="pill">📄 Compliance Reports</span>
-      </div>
-      <div class="hero-actions">
-        <a href="https://t.me/blueport_ia_wastebot" target="_blank" rel="noopener" class="btn btn-tg">✈ Open on Telegram</a>
-        <a href="#how" class="btn btn-ghost">See How It Works →</a>
-      </div>
-      <div class="stats">
-        <div class="stat"><div class="num">6</div><div class="lbl">Waste Categories</div></div>
-        <div class="stat"><div class="num">AI</div><div class="lbl">Computer Vision</div></div>
-        <div class="stat"><div class="num">24/7</div><div class="lbl">Available on Telegram</div></div>
-      </div>
-    </div>
-    <div class="hero-visual">
-      <div class="hero-card">
-        <div class="tag-float top"><span class="bdot blue"></span>Plastic · 94% confidence</div>
-        <img src="https://d2xsxph8kpxj0f.cloudfront.net/310519663332536845/QB66HgxEvbi3AQhFdsiHMm/blueport-mascot_ab734cf9.jpeg" alt="BluePort AI mascot">
-        <div class="tag-float bot"><span class="bdot green"></span>♻️ Recyclable</div>
-        <div class="card-caption">Sample output, illustrative</div>
-      </div>
-    </div>
+<section id="how"><div class="wrap">
+  <h2>How it works</h2>
+  <p class="lead">No fine-tuning of a large model. CLIP turns the photo into a 512-number embedding; a logistic-regression head trained on that embedding assigns the stream. Training takes seconds and the head is 16 KB.</p>
+  <div class="flow">
+    <span>Photo</span><i>→</i><span>CLIP ViT-B/32 encoder (frozen)</span><i>→</i><span>512-d embedding</span><i>→</i><span>Linear probe, 6 classes</span><i>→</i><span>Stream + confidence</span>
   </div>
-</section>
-
-<!-- ABOUT -->
-<section class="section-white" id="about">
-  <div class="wrap">
-    <div class="about-grid">
-      <div>
-        <span class="eyebrow">About the Project</span>
-        <h2 style="font-size:40px;font-weight:800;letter-spacing:-1px;margin:14px 0 18px">AI-Powered Waste Intelligence Built for Port Operations</h2>
-        <p style="font-size:16.5px">BluePort AI is an intelligent assistant designed specifically for the port sector. It combines computer vision with a conversational Telegram interface to make waste identification accessible to every worker on the dock, with no technical expertise required.</p>
-        <div class="tech-tags">
-          <span class="tech-tag">Python 3</span>
-          <span class="tech-tag">Computer Vision</span>
-          <span class="tech-tag">Telegram Bot API</span>
-          <span class="tech-tag">CLIP (ViT-B/32)</span>
-          <span class="tech-tag">Zero-shot + linear probe</span>
-          <span class="tech-tag">Port Sustainability</span>
-          <span class="tech-tag">Compliance Reporting</span>
-        </div>
-        <div class="about-visual" style="margin-top:28px">
-          <img src="https://d2xsxph8kpxj0f.cloudfront.net/310519663332536845/QB66HgxEvbi3AQhFdsiHMm/blueport-port-sustainability-VwVHjewVFaZGnMq6ETKyYU.webp" alt="Sustainable port of the future">
-          <div class="status-float"><div class="k">Project Status</div><div class="v"><span class="dot"></span>Active Development · Bot Live</div></div>
-        </div>
-      </div>
-      <div class="feat-cards">
-        <div class="feat"><div class="ic">⚡</div><h4>Instant Classification</h4><p>Send a photo via Telegram and receive waste type, confidence score, and disposal guidance in seconds.</p></div>
-        <div class="feat"><div class="ic">🌿</div><h4>Sustainability Workflows</h4><p>Integrates into port operational flows to support waste segregation, recycling targets, and environmental KPIs.</p></div>
-        <div class="feat"><div class="ic">🛡</div><h4>Compliance Reporting</h4><p>Generates structured logs of all classifications to support environmental audits and regulatory compliance.</p></div>
-        <div class="feat"><div class="ic">📊</div><h4>Data-Driven Insights</h4><p>Track waste composition trends over time with statistics on total images processed and average confidence.</p></div>
-      </div>
-    </div>
+  <div class="grid">
+    <div class="card"><span class="tag">Honest metrics</span><h3>Held-out evaluation</h3><p>The number on this page is cross-validated. The first version reported 95.2% measured on training images; the honest figure is 94.6%, and it is the one we quote.</p></div>
+    <div class="card"><span class="tag">Auditable</span><h3>3,078 parameters</h3><p>Everything that was trained fits in one small matrix you can inspect. The encoder is a public, documented model.</p></div>
+    <div class="card"><span class="tag">Practical</span><h3>Runs anywhere</h3><p>Browser demo on a free Space, or an offline Telegram bot on a laptop where photos never leave the machine.</p></div>
+    <div class="card"><span class="tag warn">Limitation</span><h3>Clean-item photos</h3><p>Training images are mostly single items on plain backgrounds. Mixed, dirty or partially hidden port waste scores lower; predictions under 50% are flagged.</p></div>
+    <div class="card"><span class="tag warn">Limitation</span><h3>Six streams only</h3><p>Wood, textiles, oily rags and hazardous cargo residues are not covered yet.</p></div>
+    <div class="card"><span class="tag">Origin</span><h3>From river to port</h3><p>Started in the Omdena Ganges River plastic-interceptor challenge, then adapted to port waste streams within research on port sustainability at UFMA, Brazil.</p></div>
   </div>
-</section>
+</div></section>
 
-<!-- HOW IT WORKS -->
-<section class="section-light" id="how">
-  <div class="wrap">
-    <div class="sec-head center">
-      <span class="eyebrow">How to Use</span>
-      <h2>Classify Waste in <span class="accent">3 Simple Steps</span></h2>
-      <p>BluePort AI runs entirely inside Telegram. Any port worker can use it instantly, with no training, no installation and no login required.</p>
-    </div>
-    <div class="steps">
-      <div class="step"><div class="n">STEP 01</div><h4>Open BluePort on Telegram</h4><p>Search for @blueport_ia_wastebot on Telegram and tap Start. No registration, no app download, just open and go.</p><div class="note">Works on any smartphone with Telegram installed.</div></div>
-      <div class="step"><div class="n">STEP 02</div><h4>Send a Photo of the Waste</h4><p>Take a picture of any waste material found on the dock, vessel, or port facility and send it directly in the chat.</p><div class="note">The AI analyses the image automatically, no commands needed.</div></div>
-      <div class="step"><div class="n">STEP 03</div><h4>Get Instant Classification</h4><p>BluePort AI replies in seconds with the waste category, confidence score, and disposal guidance, ready for compliance reporting.</p><div class="note">Use /stats or /count to view your session history.</div></div>
-    </div>
-    <div class="cta-band">
-      <span class="eyebrow" style="color:var(--amber-2)">Available Commands</span>
-      <h3 style="margin-top:10px">Ready to try it?</h3>
-      <p>Open Telegram and search for the bot below</p>
-      <div class="bothandle">@blueport_ia_wastebot</div>
-      <div class="cmds">
-        <div class="cmd"><div class="c">/start</div><div class="d">Welcome &amp; instructions</div></div>
-        <div class="cmd"><div class="c">📸 Photo</div><div class="d">Classify waste image</div></div>
-        <div class="cmd"><div class="c">/stats</div><div class="d">Avg confidence &amp; totals</div></div>
-        <div class="cmd"><div class="c">/count</div><div class="d">Images processed</div></div>
-      </div>
-      <p style="margin-top:24px;font-size:13.5px">Real interaction with @blueport_ia_wastebot</p>
-    </div>
+<section id="streams" class="alt"><div class="wrap">
+  <h2>Six waste streams</h2>
+  <p class="lead">Aligned with port environmental management practice and the segregation required for ship-generated waste under MARPOL Annex V.</p>
+  <div class="grid">
+    <div class="card"><h3>Plastic</h3><p>Bottles, bags, packaging, film. Never to be discharged at sea.</p></div>
+    <div class="card"><h3>Paper and cardboard</h3><p>Boxes, documents, packaging. Recyclable when clean and dry.</p></div>
+    <div class="card"><h3>Glass</h3><p>Bottles and jars. Keep whole where possible; broken glass in a rigid container.</p></div>
+    <div class="card"><h3>Metal</h3><p>Cans, cables, scrap. Segregated metal stream; MARPOL Annex V for ship-generated scrap.</p></div>
+    <div class="card"><h3>Organic</h3><p>Food waste and plant matter. Compost or organic stream; strict discharge rules at sea.</p></div>
+    <div class="card"><h3>E-waste</h3><p>Boards, cables, devices. Licensed WEEE handler, never general waste.</p></div>
   </div>
-</section>
+</div></section>
 
-<!-- WASTE TYPES -->
-<section class="section-white" id="waste">
-  <div class="wrap">
-    <div class="sec-head center">
-      <span class="eyebrow">Classification Model</span>
-      <h2>Six Waste Categories <span class="accent">Identified by AI</span></h2>
-      <p>BluePort AI classifies waste into six primary categories aligned with standard port environmental management frameworks. Each category carries specific disposal and recycling guidance.</p>
-      <div class="train-note"><span class="dot"></span>Training dataset in active development</div>
-    </div>
-    <div class="waste-grid">
-      <div class="waste"><div class="waste-top"><span class="emoji">🧴</span><span class="tagchip rec">Recyclable</span></div><h4>Plastic</h4><p>Bottles, packaging, containers, synthetic fibres. High recyclability with proper sorting.</p><div class="tokens"><span class="token">PET bottles</span><span class="token">HDPE containers</span><span class="token">Polystyrene</span><span class="token">Film wrap</span></div></div>
-      <div class="waste"><div class="waste-top"><span class="emoji">📦</span><span class="tagchip rec">Recyclable</span></div><h4>Paper</h4><p>Cardboard boxes, documents, packaging materials. Widely recyclable in port logistics.</p><div class="tokens"><span class="token">Cardboard</span><span class="token">Kraft paper</span><span class="token">Documents</span><span class="token">Packaging</span></div></div>
-      <div class="waste"><div class="waste-top"><span class="emoji">🍶</span><span class="tagchip rec">Recyclable</span></div><h4>Glass</h4><p>Bottles, jars, containers. Requires separate collection to avoid contamination.</p><div class="tokens"><span class="token">Glass bottles</span><span class="token">Jars</span><span class="token">Broken glass</span><span class="token">Containers</span></div></div>
-      <div class="waste"><div class="waste-top"><span class="emoji">🔩</span><span class="tagchip rec">Recyclable</span></div><h4>Metal</h4><p>Scrap metal, cans, cables, structural components. High-value recyclable material.</p><div class="tokens"><span class="token">Steel scrap</span><span class="token">Aluminium cans</span><span class="token">Cables</span><span class="token">Fittings</span></div></div>
-      <div class="waste"><div class="waste-top"><span class="emoji">💻</span><span class="tagchip spec">Special Handling</span></div><h4>Electronic</h4><p>Circuit boards, batteries, cables. Requires specialised e-waste handling protocols.</p><div class="tokens"><span class="token">Circuit boards</span><span class="token">Batteries</span><span class="token">Cables</span><span class="token">Sensors</span></div></div>
-      <div class="waste"><div class="waste-top"><span class="emoji">🌿</span><span class="tagchip rec">Recyclable</span></div><h4>Organic</h4><p>Food waste, biological materials. Compostable or requiring bio-waste treatment.</p><div class="tokens"><span class="token">Food scraps</span><span class="token">Vegetation</span><span class="token">Biological waste</span><span class="token">Wood</span></div></div>
-    </div>
+<section id="code"><div class="wrap">
+  <h2>Code, weights and citation</h2>
+  <p class="lead">Everything needed to reproduce the results is public: feature extraction, cross-validation, final weights and the demo app.</p>
+  <div class="grid">
+    <div class="card"><h3><a href="https://github.com/darlianecunha/blueport-ai2">blueport-ai2 on GitHub</a></h3><p>Training scripts, evaluation report, Telegram bot, MIT licence.</p></div>
+    <div class="card"><h3><a href="https://huggingface.co/spaces/HF_USER/blueport-ai">Hugging Face Space</a></h3><p>The live demo with the model card and metrics.</p></div>
+    <div class="card"><h3><a href="https://t.me/blueport_ia_wastebot">Telegram bot</a></h3><p>Offline field version. Runs when the host machine is on; see the repository to run your own.</p></div>
   </div>
-</section>
+</div></section>
 
-<!-- DATASET -->
-<section class="section-light" id="dataset">
-  <div class="wrap">
-    <div class="ds-grid">
-      <div>
-        <span class="eyebrow">Training Data</span>
-        <h2 style="font-size:40px;font-weight:800;letter-spacing:-1px;margin:14px 0 18px">Image Dataset <span class="accent">In Active Development</span></h2>
-        <p style="font-size:16px">The current model runs on OpenAI CLIP (ViT-B/32) with a lightweight linear probe trained on around 11,400 public waste images (TACO and TrashNet) across six categories, with CLIP zero-shot inference as a fallback. A dedicated dataset of waste images from port and industrial environments is now being curated to fine-tune and formally evaluate the model in the next phase.</p>
-        <p style="font-size:16px;margin-top:14px">Images are organised into six category folders — plastic, paper, glass, metal, electronic, and organic — enabling supervised learning for accurate multi-class classification. A working sample is hosted on Google Drive; a versioned release with a licence and DOI is planned once the port-specific dataset reaches a minimum volume.</p>
-        <a href="https://drive.google.com/drive/folders/1nsYgVuFvLNSoVpXOECOXK0NYHrpP1rz9?usp=drive_link" target="_blank" rel="noopener" class="btn btn-tg" style="margin-top:26px">📁 View Dataset on Google Drive (work in progress)</a>
-        <div class="ds-stats">
-          <div class="ds-stat"><div class="n">6</div><div class="t">Categories</div><div class="s">Waste types labelled</div></div>
-          <div class="ds-stat"><div class="n">~11.4k</div><div class="t">Images</div><div class="s">Public (TACO + TrashNet)</div></div>
-          <div class="ds-stat"><div class="n">Folders</div><div class="t">Format</div><div class="s">Organised by category</div></div>
-          <div class="ds-stat"><div class="n">Drive</div><div class="t">Storage</div><div class="s">Accessible &amp; collaborative</div></div>
-        </div>
-      </div>
-      <div class="ds-tree">
-        <div class="th">Dataset Structure</div>
-        <pre><span class="root">dataset/</span>
-├─ <span class="fold">plastico/</span>
-├─ <span class="fold">papel/</span>
-├─ <span class="fold">vidro/</span>
-├─ <span class="fold">metal/</span>
-├─ <span class="fold">eletronico/</span>
-└─ <span class="fold">organico/</span></pre>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- FOOTER -->
-<footer id="footer">
-  <div class="wrap">
-    <div class="foot-grid">
-      <div class="foot-about">
-        <a href="#top" class="logo"><span class="mark">⚓</span>Blue<span style="color:var(--amber)">Port</span> <span class="ai">AI</span></a>
-        <p>AI-powered waste identification and classification for port environments. Supporting operational sustainability and compliance reporting.</p>
-      </div>
-      <div class="foot">
-        <h5>Navigation</h5>
-        <ul>
-          <li><a href="#about">About</a></li>
-          <li><a href="#how">How It Works</a></li>
-          <li><a href="#waste">Waste Categories</a></li>
-          <li><a href="#dataset">Dataset</a></li>
-          <li><a href="#footer">Contact</a></li>
-        </ul>
-      </div>
-      <div class="foot">
-        <h5>Technology</h5>
-        <ul>
-          <li><a>Python</a></li>
-          <li><a>Computer Vision</a></li>
-          <li><a>Telegram Bot API</a></li>
-          <li><a>CLIP (ViT-B/32)</a></li>
-          <li><a>Zero-shot + linear probe</a></li>
-          <li><a>Port Sustainability</a></li>
-        </ul>
-      </div>
-    </div>
-    <div class="foot-bar">
-      <div>© 2026 BluePort AI. Built for port sustainability. · Project developed by Darliane Cunha</div>
-      <div class="live"><span class="dot"></span>Bot active on Telegram</div>
-    </div>
-  </div>
-</footer>
-
-<script>
-  const nav=document.getElementById('nav');
-  window.addEventListener('scroll',()=>{nav.classList.toggle('solid',window.scrollY>40)});
-  const burger=document.getElementById('burger'),links=document.getElementById('navlinks');
-  burger.addEventListener('click',()=>links.classList.toggle('open'));
-  links.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>links.classList.remove('open')));
-</script>
+<footer><div class="wrap">
+  <b style="color:#fff">Darliane Ribeiro Cunha, PhD</b> · Maritime decarbonisation and port sustainability analytics ·
+  <a href="https://ribeirocunha.com">ribeirocunha.com</a> · <a href="https://orcid.org/0000-0003-2548-1237">ORCID</a> · <a href="https://github.com/darlianecunha">GitHub</a><br>
+  <span style="font-size:12px">CLIP: OpenAI, MIT licence. Training images from public collections including TACO and TrashNet, under their own licences.</span>
+</div></footer>
 </body>
 </html>
