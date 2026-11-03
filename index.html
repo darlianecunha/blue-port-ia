@@ -140,7 +140,7 @@
     </table>
     <div>
       <img src="assets/confusion_matrix_cv.png" alt="Row-normalised confusion matrix of the six classes" style="border-radius:12px;border:1px solid var(--line)">
-      <p class="note">Most confusion is between plastic, paper and glass containers of similar shape. Organic is the smallest class; class weighting lifts its recall to 95%.</p>
+      <p class="note">Most confusion is between plastic, paper and glass containers of similar shape. Organic is by far the smallest class (172 images, 1.5% of the dataset), so its metrics rest on few examples; class weighting lifts its recall to 95%.</p>
     </div>
   </div>
 </div></section>
@@ -180,7 +180,7 @@
   <div class="grid">
     <div class="card"><h3><a href="https://github.com/darlianecunha/blueport-ai2">blueport-ai2 on GitHub</a></h3><p>Training scripts, evaluation report, Telegram bot, MIT licence.</p></div>
     <div class="card"><h3><a href="https://huggingface.co/spaces/Darliane/blueport-ai">Hugging Face Space</a></h3><p>The live demo with the model card and metrics.</p></div>
-    <div class="card"><h3><a href="https://t.me/blueport_ia_wastebot">Telegram bot</a></h3><p>Offline field version. Runs when the host machine is on; see the repository to run your own.</p></div>
+    <div class="card"><h3><a href="https://t.me/blueport_ia_wastebot">Telegram bot</a></h3><p>Field version for phone use. Runs as a serverless function on Vercel, so it stays online; see the repository to run your own.</p></div>
   </div>
 </div></section>
 
